@@ -1,0 +1,155 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  user_id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  name                 String   @unique
+  email                String   @unique
+  phone                String   @unique
+  password             String
+  email_verified       Boolean
+  phone_verified       Boolean
+  verification_code    String?
+  verification_code_expires DateTime?
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+  reset_password_token String?
+  reset_password_expires DateTime?
+
+  posts      Post[]
+  friends    Friend[] @relation("UserFriends")
+  friendOf   Friend[] @relation("UserFriendOf")
+  chatParticipants ChatParticipant[]
+  messages   Message[]
+  likes      Like[]
+  comments   Comment[]
+  interests  Interest[]
+  visitedPlaces VisitedPlace[]
+}
+
+model Post {
+  post_id    String   @id @default(auto()) @map("_id") @db.ObjectId
+  user_id    String
+  content    String
+  description String?
+  location   String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  user       User     @relation(fields: [user_id], references: [user_id])
+  likes      Like[]
+  comments   Comment[]
+
+  @@index([user_id])
+}
+
+model Friend {
+  friend_id  String   @id @default(auto()) @map("_id") @db.ObjectId
+  user_id    String
+  friend_user_id String
+  status     String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  user       User     @relation("UserFriends", fields: [user_id], references: [user_id])
+  friend     User     @relation("UserFriendOf", fields: [friend_user_id], references: [user_id])
+
+  @@index([user_id])
+  @@index([friend_user_id])
+}
+
+model Chat {
+  chat_id    String   @id @default(auto()) @map("_id") @db.ObjectId
+  chat_name  String?
+  is_group   Boolean
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  participants ChatParticipant[]
+  messages     Message[]
+}
+
+model ChatParticipant {
+  participant_id String   @id @default(auto()) @map("_id") @db.ObjectId
+  chat_id        String
+  user_id        String
+  joined_at      DateTime @default(now())
+  is_admin       Boolean
+
+  chat           Chat     @relation(fields: [chat_id], references: [chat_id])
+  user           User     @relation(fields: [user_id], references: [user_id])
+
+  @@index([chat_id])
+  @@index([user_id])
+}
+
+model Message {
+  message_id String   @id @default(auto()) @map("_id") @db.ObjectId
+  chat_id    String
+  sender_id  String
+  content    String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  chat       Chat     @relation(fields: [chat_id], references: [chat_id])
+  sender     User     @relation(fields: [sender_id], references: [user_id])
+
+  @@index([chat_id])
+  @@index([sender_id])
+}
+
+model Like {
+  like_id    String   @id @default(auto()) @map("_id") @db.ObjectId
+  user_id    String
+  post_id    String
+  created_at DateTime @default(now())
+
+  user       User     @relation(fields: [user_id], references: [user_id])
+  post       Post     @relation(fields: [post_id], references: [post_id])
+
+  @@index([user_id])
+  @@index([post_id])
+}
+
+model Comment {
+  comment_id String   @id @default(auto()) @map("_id") @db.ObjectId
+  post_id    String
+  user_id    String
+  content    String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  post       Post     @relation(fields: [post_id], references: [post_id])
+  user       User     @relation(fields: [user_id], references: [user_id])
+
+  @@index([post_id])
+  @@index([user_id])
+}
+
+model Interest {
+  interest_id String   @id @default(auto()) @map("_id") @db.ObjectId
+  user_id     String
+  interest    String
+  created_at  DateTime @default(now())
+
+  user        User     @relation(fields: [user_id], references: [user_id])
+
+  @@index([user_id])
+}
+
+model VisitedPlace {
+  place_id   String   @id @default(auto()) @map("_id") @db.ObjectId
+  user_id    String
+  place      String
+  created_at DateTime @default(now())
+
+  user       User     @relation(fields: [user_id], references: [user_id])
+
+  @@index([user_id])
+}
